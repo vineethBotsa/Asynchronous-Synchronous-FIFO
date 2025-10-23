@@ -1,16 +1,23 @@
-module fifo_mem #(parameter DATA_WIDTH=8, parameter PTR_WIDTH=3)(
-  input wclk, wrst_n, w_en,
-  input rclk, rrst_n, r_en,
-  input [DATA_WIDTH-1:0] w_data,
-  input [PTR_WIDTH:0] write_addr, read_addr,
-  output reg [DATA_WIDTH-1:0] r_data
+module fifo_mem #(parameter DEPTH=8, DATA_WIDTH=8, PTR_WIDTH=3) (
+  input wclk, w_en, rclk, r_en,
+  input [PTR_WIDTH:0] b_wptr, b_rptr,
+  input [DATA_WIDTH-1:0] data_in,
+  input full, empty,
+  output reg [DATA_WIDTH-1:0] data_out
 );
-  reg [DATA_WIDTH-1:0] mem [0: (1<<(PTR_WIDTH+1))-1];
-  // Write logic
-  always @(posedge wclk) if (w_en) mem[write_addr] <= w_data;
-  // Read logic
-  always @(posedge rclk) begin
-    if (!rrst_n) r_data <= 0;
-    else if (r_en) r_data <= mem[read_addr];
+  reg [DATA_WIDTH-1:0] fifo[0:DEPTH-1];
+  
+  always@(posedge wclk) begin
+    if(w_en & !full) begin
+      fifo[b_wptr[PTR_WIDTH-1:0]] <= data_in;
+    end
   end
+  
+  always@(posedge rclk) begin
+    if(r_en & !empty) begin
+      data_out <= fifo[b_rptr[PTR_WIDTH-1:0]];
+    end
+  end
+  
+  assign data_out = fifo[b_rptr[PTR_WIDTH-1:0]];
 endmodule
