@@ -4,5 +4,27 @@ module rptr_handler #(parameter PTR_WIDTH=3) (
   output reg [PTR_WIDTH:0] b_rptr, g_rptr,
   output reg empty
 );
-  // Logic mirrors wptr_handler, including Gray conversion and empty logic
+
+  reg [PTR_WIDTH:0] b_rptr_next;
+  reg [PTR_WIDTH:0] g_rptr_next;
+
+  assign b_rptr_next = b_rptr+(r_en & !empty);
+  assign g_rptr_next = (b_rptr_next >>1)^b_rptr_next;
+  assign rempty = (g_wptr_sync == g_rptr_next);
+  
+  always@(posedge rclk or negedge rrst_n) begin
+    if(!rrst_n) begin
+      b_rptr <= 0;
+      g_rptr <= 0;
+    end
+    else begin
+      b_rptr <= b_rptr_next;
+      g_rptr <= g_rptr_next;
+    end
+  end
+  
+  always@(posedge rclk or negedge rrst_n) begin
+    if(!rrst_n) empty <= 1;
+    else        empty <= rempty;
+  end
 endmodule
